@@ -1,0 +1,60 @@
+# Binaries for programs and plugins
+/bin/
+/bot
+*.exe
+*.dll
+*.so
+*.dylib
+*.exe~
+
+# Build output
+/_output/
+dist/
+build/
+
+# Vendor directory (optional - remove if you commit vendor)
+/vendor/
+
+# Go specific
+*.test
+*.out
+coverage.out
+
+# Environment files
+.env
+.env.local
+.env.*
+
+# Logs and temp files
+*.log
+*.tmp
+
+# IDEs and editors
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+*.sublime-project
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Misc
+*.swp
+*.swm
+*~
+
+# Docker
+docker-compose.override.yml
+
+# Terraform
+.terraform/
+
+# Ignore local secrets and overrides
+.local
+
+# End of file
+
