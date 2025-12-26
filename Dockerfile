@@ -13,7 +13,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the rest of the source
-COPY . .
+COPY internal/commands .
 
 # Build a static binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
