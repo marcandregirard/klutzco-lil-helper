@@ -2,9 +2,8 @@ package commands
 
 import (
 	"fmt"
-	"strings"
-
 	"idle-clans-helper-bot/internal/model"
+	"strings"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -87,12 +86,12 @@ func bossAutocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreat
 	}
 
 	current := i.ApplicationCommandData().Options[0].StringValue()
-	choices := []*discordgo.ApplicationCommandOptionChoice{}
+	var choices []*discordgo.ApplicationCommandOptionChoice
 
 	for key := range model.BossesInformation {
 		if strings.Contains(strings.ToLower(key), strings.ToLower(current)) {
 			choices = append(choices, &discordgo.ApplicationCommandOptionChoice{
-				Name:  strings.Title(key),
+				Name:  titleizer.String(key),
 				Value: key,
 			})
 		}

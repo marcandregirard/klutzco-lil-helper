@@ -92,7 +92,7 @@ func keysAutocompleteHandler(s *discordgo.Session, i *discordgo.InteractionCreat
 	}
 
 	current := i.ApplicationCommandData().Options[0].StringValue()
-	choices := []*discordgo.ApplicationCommandOptionChoice{}
+	var choices []*discordgo.ApplicationCommandOptionChoice
 
 	for key := range model.KeysInformation {
 		if strings.Contains(strings.ToLower(key), strings.ToLower(current)) {

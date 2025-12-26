@@ -1,7 +1,7 @@
 # ============================
 # 1. Build Stage
 # ============================
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23.2-alpine AS builder
 
 # Install git (required for go mod download)
 RUN apk add --no-cache git
