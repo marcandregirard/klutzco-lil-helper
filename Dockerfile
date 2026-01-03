@@ -1,7 +1,7 @@
 # ============================
 # 1. Build Stage
 # ============================
-FROM golang:1.23.2-alpine AS builder
+FROM golang:1.25.5-alpine AS builder
 
 # Install git (required for go mod download)
 RUN apk add --no-cache git
@@ -22,7 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 # ============================
 # 2. Runtime Stage
 # ============================
-FROM alpine:3.20
+FROM alpine:3.23
 
 WORKDIR /app
 
