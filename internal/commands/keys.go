@@ -7,7 +7,7 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
-	"idle-clans-helper-bot/internal/model"
+	"klutco-lil-helper/internal/model"
 
 	"github.com/bwmarrin/discordgo"
 )

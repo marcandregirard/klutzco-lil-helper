@@ -6,7 +6,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"idle-clans-helper-bot/internal/bot"
+	"klutco-lil-helper/internal/bot"
 )
 
 func main() {

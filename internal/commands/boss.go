@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"idle-clans-helper-bot/internal/model"
+	"klutco-lil-helper/internal/model"
 	"strings"
 
 	"github.com/bwmarrin/discordgo"

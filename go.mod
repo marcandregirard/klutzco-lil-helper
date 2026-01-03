@@ -1,4 +1,4 @@
-module idle-clans-helper-bot
+module klutco-lil-helper
 
 go 1.23.2
 

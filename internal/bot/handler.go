@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"idle-clans-helper-bot/internal/commands"
+	"klutco-lil-helper/internal/commands"
 	"log"
 	"os"
 	"os/signal"
