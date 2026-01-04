@@ -1,12 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
 	"github.com/joho/godotenv"
 
 	"klutco-lil-helper/internal/bot"
+	"klutco-lil-helper/internal/model"
 )
 
 func main() {
@@ -22,8 +24,29 @@ func main() {
 	if appId == "" {
 		log.Fatalln("DISCORD_APP_ID is not set")
 	}
+	// Open (or create) the sqlite database. DB_PATH env var can override the default.
+	dbPath := os.Getenv("DB_PATH")
+	if dbPath == "" {
+		// default location inside container where docker-compose will mount volume
+		dbPath = "/app/data/lilhelper.db"
+	}
 
-	b, err := bot.New(token, appId)
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		log.Fatalln("failed to open database:", err)
+	}
+
+	// Verify we can connect/open the file
+	if err := db.Ping(); err != nil {
+		log.Fatalln("failed to ping database", err)
+	}
+
+	// Run migrations
+	if err := model.Migrate(db); err != nil {
+		log.Fatalln("failed to migrate database:", err)
+	}
+
+	b, err := bot.New(token, appId, db)
 	if err != nil {
 		log.Fatalf("failed to create bot: %v\n", err)
 	}
