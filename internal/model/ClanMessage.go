@@ -10,6 +10,7 @@ type ClanMessage struct {
 	MemberUsername string    `json:"memberUsername"`
 	Message        string    `json:"message"`
 	Timestamp      time.Time `json:"timestamp"`
+	MessageSent    bool      `json:"messageSent"`
 }
 
 const createTableQuery = `
@@ -18,7 +19,8 @@ CREATE TABLE IF NOT EXISTS clan_messages (
     clan_name TEXT NOT NULL,
     member_username TEXT NOT NULL,
     message TEXT NOT NULL,
-    timestamp DATETIME NOT NULL
+    timestamp DATETIME NOT NULL,
+    message_sent INTEGER NOT NULL DEFAULT 0
 );
 
 -- unique index to prevent duplicate entries (clan, member, message, timestamp)
@@ -39,11 +41,12 @@ func InsertClanMessage(db *sql.DB, msg ClanMessage) error {
 	return err
 }
 
-func GetMessagesByClan(db *sql.DB) ([]ClanMessage, error) {
+func GetMessages(db *sql.DB) ([]ClanMessage, error) {
 	query := `
-        SELECT clan_name, member_username, message, timestamp
+        SELECT clan_name, member_username, message, timestamp, message_sent
         FROM clan_messages
         ORDER BY timestamp DESC
+        WHERE message_sent = 0
     `
 
 	rows, err := db.Query(query)
@@ -57,12 +60,14 @@ func GetMessagesByClan(db *sql.DB) ([]ClanMessage, error) {
 	for rows.Next() {
 		var msg ClanMessage
 		var ts string
+		var sentInt int
 
 		if err := rows.Scan(
 			&msg.ClanName,
 			&msg.MemberUsername,
 			&msg.Message,
 			&ts,
+			&sentInt,
 		); err != nil {
 			return nil, err
 		}
@@ -79,6 +84,8 @@ func GetMessagesByClan(db *sql.DB) ([]ClanMessage, error) {
 				msg.Timestamp = time.Time{}
 			}
 		}
+
+		msg.MessageSent = sentInt != 0
 
 		results = append(results, msg)
 	}
