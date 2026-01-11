@@ -57,6 +57,9 @@ func (b *Bot) Start() error {
 	}
 	go b.runClanLogFetcher(ctx, interval, url)
 
+	// start message sender (every 30s)
+	go b.runMessageSender(ctx)
+
 	// Wait for interrupt signal to gracefully shut down
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

@@ -1,0 +1,104 @@
+package bot
+
+import (
+	"context"
+	"log"
+	"time"
+
+	"klutco-lil-helper/internal/model"
+
+	"github.com/bwmarrin/discordgo"
+)
+
+// runMessageSender starts a background routine that, every 30 seconds,
+// fetches up to 10 oldest unsent clan messages and posts them to a channel named "testing-ground".
+// After successful send, the messages are marked as sent in the database.
+func (b *Bot) runMessageSender(ctx context.Context) {
+	interval := 30 * time.Second
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	// send immediately once on startup
+	b.sendPendingMessages()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("[messagesender] stopping message sender")
+			return
+		case <-ticker.C:
+			b.sendPendingMessages()
+		}
+	}
+}
+
+// sendPendingMessages fetches messages from DB and sends them to the testing-ground channel.
+func (b *Bot) sendPendingMessages() {
+	if b.db == nil {
+		log.Println("[messagesender] no db available")
+		return
+	}
+
+	msgs, err := model.GetMessages(b.db)
+	if err != nil {
+		log.Printf("[messagesender] failed to get messages: %v", err)
+		return
+	}
+	if len(msgs) == 0 {
+		return
+	}
+
+	// find channel ID for name "testing-ground" across guilds the bot is in
+	channelID := b.findChannelIDByName("testing-ground")
+	if channelID == "" {
+		log.Println("[messagesender] channel \"testing-ground\" not found")
+		return
+	}
+
+	sentIDs := make([]int64, 0, len(msgs))
+	for _, m := range msgs {
+		text := formatMessage(m)
+		if _, err := b.session.ChannelMessageSend(channelID, text); err != nil {
+			log.Printf("[messagesender] failed to send message id=%d: %v", m.ID, err)
+			// don't mark as sent; continue to next
+			continue
+		}
+		sentIDs = append(sentIDs, m.ID)
+		// small pause to avoid hitting rate limits
+		time.Sleep(150 * time.Millisecond)
+	}
+
+	if len(sentIDs) > 0 {
+		if err := model.MarkMessagesSent(b.db, sentIDs); err != nil {
+			log.Printf("[messagesender] failed to mark messages sent: %v", err)
+		}
+	}
+}
+
+func formatMessage(m model.ClanMessage) string {
+	return "[" + m.ClanName + "] <" + m.MemberUsername + ">: " + m.Message
+}
+
+// findChannelIDByName searches the bot's guilds for a text channel with the given name.
+// Returns the first matching channel ID or empty string if not found.
+func (b *Bot) findChannelIDByName(name string) string {
+	// Prefer cached guilds from state
+	if b.session == nil || b.session.State == nil {
+		log.Println("[messagesender] session or state is nil")
+		return ""
+	}
+
+	for _, g := range b.session.State.Guilds {
+		channels, err := b.session.GuildChannels(g.ID)
+		if err != nil {
+			log.Printf("[messagesender] failed to list channels for guild %s: %v", g.ID, err)
+			continue
+		}
+		for _, ch := range channels {
+			if ch.Type == discordgo.ChannelTypeGuildText && ch.Name == name {
+				return ch.ID
+			}
+		}
+	}
+	return ""
+}
