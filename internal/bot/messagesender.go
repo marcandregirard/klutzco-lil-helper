@@ -10,16 +10,22 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+const defaultPendingChannel = "testing-ground"
+
 // runMessageSender starts a background routine that, every 30 seconds,
 // fetches up to 10 oldest unsent clan messages and posts them to a channel named "testing-ground".
 // After successful send, the messages are marked as sent in the database.
-func (b *Bot) runMessageSender(ctx context.Context) {
+func (b *Bot) runMessageSender(ctx context.Context, channelName string) {
 	interval := 30 * time.Second
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	if channelName == "" {
+		channelName = defaultPendingChannel
+	}
+
 	// send immediately once on startup
-	b.sendPendingMessages()
+	b.sendPendingMessages(channelName)
 
 	for {
 		select {
@@ -27,13 +33,13 @@ func (b *Bot) runMessageSender(ctx context.Context) {
 			log.Println("[messagesender] stopping message sender")
 			return
 		case <-ticker.C:
-			b.sendPendingMessages()
+			b.sendPendingMessages(channelName)
 		}
 	}
 }
 
 // sendPendingMessages fetches messages from DB and sends them to the testing-ground channel.
-func (b *Bot) sendPendingMessages() {
+func (b *Bot) sendPendingMessages(channelName string) {
 	if b.db == nil {
 		log.Println("[messagesender] no db available")
 		return
@@ -49,9 +55,9 @@ func (b *Bot) sendPendingMessages() {
 	}
 
 	// find channel ID for name "testing-ground" across guilds the bot is in
-	channelID := b.findChannelIDByName("testing-ground")
+	channelID := b.findChannelIDByName(channelName)
 	if channelID == "" {
-		log.Println("[messagesender] channel \"testing-ground\" not found")
+		log.Printf("[messagesender] channel %v not found", channelName)
 		return
 	}
 
