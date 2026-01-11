@@ -102,3 +102,24 @@ func (b *Bot) findChannelIDByName(name string) string {
 	}
 	return ""
 }
+
+func CanBotSend(s *discordgo.Session, channelID string) (bool, error) {
+	botID := s.State.User.ID
+
+	_, err := s.Channel(channelID)
+
+	if err != nil {
+
+		return false, err
+	}
+
+	perms, err := s.State.UserChannelPermissions(botID, channelID)
+	if err != nil {
+		return false, err
+	}
+
+	canView := perms&discordgo.PermissionViewChannel != 0
+	canSend := perms&discordgo.PermissionSendMessages != 0
+
+	return canView && canSend, nil
+}

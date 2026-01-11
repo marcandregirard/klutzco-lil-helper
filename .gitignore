@@ -58,3 +58,4 @@ docker-compose.override.yml
 
 # End of file
 
+/database.db
