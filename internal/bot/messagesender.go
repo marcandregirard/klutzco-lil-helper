@@ -118,10 +118,32 @@ func (b *Bot) checkForLargeGoldDonation(msg model.ClanMessage) {
 		return
 	}
 
-	// Create and send celebration message
-	celebrationText := "🔔🎉 Leadership commends **" + playerName + "** for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done."
+	// Convert UTC timestamp to EST/EDT for the embed
+	est, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		log.Printf("[messagesender] failed to load EST timezone: %v", err)
+		est = time.UTC // fallback to UTC
+	}
+	estTime := msg.Timestamp.In(est)
 
-	if _, err := b.session.ChannelMessageSend(generalChannelID, celebrationText); err != nil {
+	// Create celebration embed
+	embed := &discordgo.MessageEmbed{
+		Title:       "🔔🎉 Leadership Commendation",
+		Description: "Leadership commends **" + playerName + "** for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done.",
+		Color:       0xFFD700, // Gold color
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: estTime.Format("Jan _2, 2006 at 3:04 PM MST"),
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Amount Donated",
+				Value:  formatAmount(amount) + " Gold",
+				Inline: true,
+			},
+		},
+	}
+
+	if _, err := b.session.ChannelMessageSendEmbed(generalChannelID, embed); err != nil {
 		log.Printf("[messagesender] failed to send celebration message for %s: %v", playerName, err)
 	} else {
 		log.Printf("[messagesender] sent celebration message for %s's %d gold donation", playerName, amount)
@@ -138,6 +160,24 @@ func formatMessage(m model.ClanMessage) string {
 	}
 	estTime := m.Timestamp.In(est)
 	return "`[" + estTime.Format("Jan _2 15:04") + "]` " + m.Message
+}
+
+// formatAmount formats a number with comma separators (e.g., 1000000 -> "1,000,000")
+func formatAmount(n int64) string {
+	s := strconv.FormatInt(n, 10)
+	if len(s) <= 3 {
+		return s
+	}
+
+	// Insert commas from right to left
+	var result []byte
+	for i, digit := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, byte(digit))
+	}
+	return string(result)
 }
 
 // findChannelIDByName searches the bot's guilds for a text channel with the given name.
