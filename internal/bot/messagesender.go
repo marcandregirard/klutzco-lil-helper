@@ -93,12 +93,18 @@ func (b *Bot) sendPendingMessages(defaultChannelName string) {
 }
 
 // determineChannel determines which Discord channel a message should be sent to
-// based on its content. Celebration messages go to "general", everything else
-// goes to the default channel.
+// based on its content.
+// - Celebration messages (gold > 1M) go to "general"
+// - Gold donation messages go to "corporate-oversight"
+// - All other messages go to the default channel
 func determineChannel(msg model.ClanMessage, defaultChannel string) string {
 	// Celebration messages (from gold donations > 1M) go to general
 	if strings.HasPrefix(msg.Message, "Leadership commends ") {
 		return "general"
+	}
+	// Gold donation messages go to corporate-oversight
+	if strings.Contains(msg.Message, "added ") && strings.Contains(msg.Message, "x Gold.") {
+		return "corporate-oversight"
 	}
 	// All other messages go to the default channel
 	return defaultChannel
