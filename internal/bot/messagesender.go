@@ -82,7 +82,15 @@ func (b *Bot) sendPendingMessages(channelName string) {
 }
 
 func formatMessage(m model.ClanMessage) string {
-	return "`[" + m.Timestamp.Format("Jan _2 15:04") + "]` " + m.Message
+	// Convert UTC timestamp to EST/EDT
+	est, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		log.Printf("[messagesender] failed to load EST timezone: %v", err)
+		// fallback to UTC if timezone loading fails
+		return "`[" + m.Timestamp.Format("Jan _2 15:04") + "]` " + m.Message
+	}
+	estTime := m.Timestamp.In(est)
+	return "`[" + estTime.Format("Jan _2 15:04") + "]` " + m.Message
 }
 
 // findChannelIDByName searches the bot's guilds for a text channel with the given name.
