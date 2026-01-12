@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"klutco-lil-helper/internal/model"
@@ -54,13 +55,10 @@ func (b *Bot) sendPendingMessages(defaultChannelName string) {
 		return
 	}
 
-	// Group messages by channel
+	// Group messages by channel based on content
 	messagesByChannel := make(map[string][]model.ClanMessage)
 	for _, m := range msgs {
-		channelName := m.ChannelName
-		if channelName == "" {
-			channelName = defaultChannelName
-		}
+		channelName := determineChannel(m, defaultChannelName)
 		messagesByChannel[channelName] = append(messagesByChannel[channelName], m)
 	}
 
@@ -92,6 +90,18 @@ func (b *Bot) sendPendingMessages(defaultChannelName string) {
 			log.Printf("[messagesender] failed to mark messages sent: %v", err)
 		}
 	}
+}
+
+// determineChannel determines which Discord channel a message should be sent to
+// based on its content. Celebration messages go to "general", everything else
+// goes to the default channel.
+func determineChannel(msg model.ClanMessage, defaultChannel string) string {
+	// Celebration messages (from gold donations > 1M) go to general
+	if strings.HasPrefix(msg.Message, "Leadership commends ") {
+		return "general"
+	}
+	// All other messages go to the default channel
+	return defaultChannel
 }
 
 func formatMessage(m model.ClanMessage) string {

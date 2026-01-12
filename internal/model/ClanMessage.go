@@ -13,7 +13,6 @@ type ClanMessage struct {
 	Message        string    `json:"message"`
 	Timestamp      time.Time `json:"timestamp"`
 	MessageSent    bool      `json:"messageSent"`
-	ChannelName    string    `json:"channelName,omitempty"`
 }
 
 const createTableQuery = `
@@ -23,8 +22,7 @@ CREATE TABLE IF NOT EXISTS clan_messages (
     member_username TEXT NOT NULL,
     message TEXT NOT NULL,
     timestamp DATETIME NOT NULL,
-    message_sent INTEGER NOT NULL DEFAULT 0,
-    channel_name TEXT NOT NULL DEFAULT 'testing-ground'
+    message_sent INTEGER NOT NULL DEFAULT 0
 );
 
 -- unique index to prevent duplicate entries (clan, member, message, timestamp)
@@ -32,20 +30,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_clan_messages_unique ON clan_messages (cla
 `
 
 func InsertClanMessage(db *sql.DB, msg ClanMessage) error {
-	channelName := msg.ChannelName
-	if channelName == "" {
-		channelName = "testing-ground"
-	}
 	query := `
-        INSERT OR IGNORE INTO clan_messages (clan_name, member_username, message, timestamp, channel_name)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT OR IGNORE INTO clan_messages (clan_name, member_username, message, timestamp)
+        VALUES (?, ?, ?, ?)
     `
 	_, err := db.Exec(query,
 		msg.ClanName,
 		msg.MemberUsername,
 		msg.Message,
 		msg.Timestamp.UTC().Format(time.RFC3339),
-		channelName,
 	)
 	return err
 }
@@ -53,7 +46,7 @@ func InsertClanMessage(db *sql.DB, msg ClanMessage) error {
 func GetMessages(db *sql.DB) ([]ClanMessage, error) {
 	// return up to 10 oldest unsent messages
 	query := `
-        SELECT id, clan_name, member_username, message, timestamp, message_sent, COALESCE(channel_name, 'testing-ground')
+        SELECT id, clan_name, member_username, message, timestamp, message_sent
         FROM clan_messages
         WHERE message_sent = 0
         ORDER BY timestamp ASC
@@ -80,7 +73,6 @@ func GetMessages(db *sql.DB) ([]ClanMessage, error) {
 			&msg.Message,
 			&ts,
 			&sentInt,
-			&msg.ChannelName,
 		); err != nil {
 			return nil, err
 		}
@@ -136,7 +128,7 @@ func Migrate(db *sql.DB) error {
 		return err
 	}
 
-	// Table exists. Check whether `id` and `channel_name` columns are present.
+	// Table exists. Check whether `id` column is present. If present, ensure index exists and return.
 	rows, err := db.Query("PRAGMA table_info(clan_messages)")
 	if err != nil {
 		return err
@@ -144,7 +136,6 @@ func Migrate(db *sql.DB) error {
 	defer rows.Close()
 
 	hasID := false
-	hasChannelName := false
 	for rows.Next() {
 		var cid int
 		var colName string
@@ -157,31 +148,17 @@ func Migrate(db *sql.DB) error {
 		}
 		if colName == "id" {
 			hasID = true
-		}
-		if colName == "channel_name" {
-			hasChannelName = true
+			break
 		}
 	}
 
-	// If we have id and channel_name, just ensure index exists and return
-	if hasID && hasChannelName {
+	if hasID {
 		// ensure unique index exists
 		_, err := db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_clan_messages_unique ON clan_messages (clan_name, member_username, message, timestamp)")
 		return err
 	}
 
-	// If we have id but not channel_name, add the column
-	if hasID && !hasChannelName {
-		_, err := db.Exec("ALTER TABLE clan_messages ADD COLUMN channel_name TEXT NOT NULL DEFAULT 'testing-ground'")
-		if err != nil {
-			return err
-		}
-		// ensure unique index exists
-		_, err = db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_clan_messages_unique ON clan_messages (clan_name, member_username, message, timestamp)")
-		return err
-	}
-
-	// Need to migrate existing table into new schema with `id` and `channel_name` columns.
+	// Need to migrate existing table into new schema with `id` column.
 	// Strategy: create new table, copy data, drop old table, rename new table, create index.
 	tx, err := db.Begin()
 	if err != nil {
@@ -196,8 +173,7 @@ func Migrate(db *sql.DB) error {
 		    member_username TEXT NOT NULL,
 		    message TEXT NOT NULL,
 		    timestamp DATETIME NOT NULL,
-		    message_sent INTEGER NOT NULL DEFAULT 0,
-		    channel_name TEXT NOT NULL DEFAULT 'testing-ground'
+		    message_sent INTEGER NOT NULL DEFAULT 0
 		)
 	`)
 	if err != nil {
@@ -205,10 +181,10 @@ func Migrate(db *sql.DB) error {
 		return err
 	}
 
-	// copy data. If the old table lacks message_sent or channel_name, COALESCE will default them.
+	// copy data. If the old table lacks message_sent, COALESCE will default that to 0.
 	_, err = tx.Exec(`
-		INSERT INTO clan_messages_new (clan_name, member_username, message, timestamp, message_sent, channel_name)
-		SELECT clan_name, member_username, message, timestamp, COALESCE(message_sent, 0), COALESCE(channel_name, 'testing-ground')
+		INSERT INTO clan_messages_new (clan_name, member_username, message, timestamp, message_sent)
+		SELECT clan_name, member_username, message, timestamp, COALESCE(message_sent, 0)
 		FROM clan_messages
 	`)
 	if err != nil {

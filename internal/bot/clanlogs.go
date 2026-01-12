@@ -168,7 +168,6 @@ func checkGoldDonation(msg model.ClanMessage) *model.ClanMessage {
 		Message:        celebrationText,
 		Timestamp:      msg.Timestamp,
 		MessageSent:    false,
-		ChannelName:    "general",
 	}
 }
 
