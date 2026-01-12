@@ -31,7 +31,7 @@ func main() {
 		dbPath = "/app/data/lilhelper.db"
 	}
 
-	db, err := sql.Open("sqlite", dbPath)
+	db, err := sql.Open("sqlite", dbPath+"?_busy_timeout=5000&_journal_mode=WAL")
 	if err != nil {
 		log.Fatalln("failed to open database:", err)
 	}
@@ -45,6 +45,16 @@ func main() {
 	if err := model.Migrate(db); err != nil {
 		log.Fatalln("failed to migrate database:", err)
 	}
+	// Important: limit to 1 connection for sqlite to avoid writer/reader connection churn.
+	db.SetMaxOpenConns(1)
+
+	// Optional tuning
+	db.SetConnMaxLifetime(0)
+	db.SetMaxIdleConns(1)
+
+	// Ensure PRAGMAs applied on open connection (safe to ignore error on Exec if driver already set)
+	_, _ = db.Exec("PRAGMA journal_mode = WAL;")
+	_, _ = db.Exec("PRAGMA synchronous = NORMAL;")
 
 	b, err := bot.New(token, appId, db)
 	if err != nil {

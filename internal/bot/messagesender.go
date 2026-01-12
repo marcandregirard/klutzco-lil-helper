@@ -82,7 +82,7 @@ func (b *Bot) sendPendingMessages(channelName string) {
 }
 
 func formatMessage(m model.ClanMessage) string {
-	return "[" + m.ClanName + "] <" + m.MemberUsername + ">: " + m.Message
+	return "[" + m.Timestamp.Format(time.RFC3339) + "] " + m.Message
 }
 
 // findChannelIDByName searches the bot's guilds for a text channel with the given name.

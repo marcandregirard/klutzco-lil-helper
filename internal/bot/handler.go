@@ -60,7 +60,8 @@ func (b *Bot) Start() error {
 	go b.runClanLogFetcher(ctx, 1*time.Minute, "https://query.idleclans.com/api/Clan/logs/clan/KlutzCo?limit=10")
 
 	// start message sender (every 30s)
-	go b.runMessageSender(ctx, "")
+	channelName := os.Getenv("CLAN_MESSAGE_CHANNEL")
+	go b.runMessageSender(ctx, channelName)
 
 	// Wait for interrupt signal to gracefully shut down
 	stop := make(chan os.Signal, 1)

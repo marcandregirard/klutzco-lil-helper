@@ -5,9 +5,9 @@ services:
     build: .
     image: klutzco/lil-helper:latest
     restart: unless-stopped
+    env_file:
+      - .klutz.env
     environment:
-      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
-      - DISCORD_APP_ID=${DISCORD_APP_ID}
       - DB_PATH=/app/data/lilhelper.db
     volumes:
       - data:/app/data
