@@ -38,8 +38,8 @@ func (b *Bot) runMessageSender(ctx context.Context, channelName string) {
 	}
 }
 
-// sendPendingMessages fetches messages from DB and sends them to the testing-ground channel.
-func (b *Bot) sendPendingMessages(channelName string) {
+// sendPendingMessages fetches messages from DB and sends them to their designated channels.
+func (b *Bot) sendPendingMessages(defaultChannelName string) {
 	if b.db == nil {
 		log.Println("[messagesender] no db available")
 		return
@@ -54,24 +54,37 @@ func (b *Bot) sendPendingMessages(channelName string) {
 		return
 	}
 
-	// find channel ID for name "testing-ground" across guilds the bot is in
-	channelID := b.findChannelIDByName(channelName)
-	if channelID == "" {
-		log.Printf("[messagesender] channel %v not found", channelName)
-		return
+	// Group messages by channel
+	messagesByChannel := make(map[string][]model.ClanMessage)
+	for _, m := range msgs {
+		channelName := m.ChannelName
+		if channelName == "" {
+			channelName = defaultChannelName
+		}
+		messagesByChannel[channelName] = append(messagesByChannel[channelName], m)
 	}
 
+	// Send messages to each channel
 	sentIDs := make([]int64, 0, len(msgs))
-	for _, m := range msgs {
-		text := formatMessage(m)
-		if _, err := b.session.ChannelMessageSend(channelID, text); err != nil {
-			log.Printf("[messagesender] failed to send message id=%d: %v", m.ID, err)
-			// don't mark as sent; continue to next
+	for channelName, channelMsgs := range messagesByChannel {
+		// find channel ID for this channel name
+		channelID := b.findChannelIDByName(channelName)
+		if channelID == "" {
+			log.Printf("[messagesender] channel %q not found, skipping %d messages", channelName, len(channelMsgs))
 			continue
 		}
-		sentIDs = append(sentIDs, m.ID)
-		// small pause to avoid hitting rate limits
-		time.Sleep(150 * time.Millisecond)
+
+		for _, m := range channelMsgs {
+			text := formatMessage(m)
+			if _, err := b.session.ChannelMessageSend(channelID, text); err != nil {
+				log.Printf("[messagesender] failed to send message id=%d to channel %q: %v", m.ID, channelName, err)
+				// don't mark as sent; continue to next
+				continue
+			}
+			sentIDs = append(sentIDs, m.ID)
+			// small pause to avoid hitting rate limits
+			time.Sleep(150 * time.Millisecond)
+		}
 	}
 
 	if len(sentIDs) > 0 {
