@@ -3,6 +3,8 @@ package bot
 import (
 	"context"
 	"log"
+	"regexp"
+	"strconv"
 	"time"
 
 	"klutco-lil-helper/internal/model"
@@ -70,6 +72,10 @@ func (b *Bot) sendPendingMessages(channelName string) {
 			continue
 		}
 		sentIDs = append(sentIDs, m.ID)
+
+		// Check if this was a large gold donation and send celebration message
+		b.checkForLargeGoldDonation(m)
+
 		// small pause to avoid hitting rate limits
 		time.Sleep(150 * time.Millisecond)
 	}
@@ -78,6 +84,69 @@ func (b *Bot) sendPendingMessages(channelName string) {
 		if err := model.MarkMessagesSent(b.db, sentIDs); err != nil {
 			log.Printf("[messagesender] failed to mark messages sent: %v", err)
 		}
+	}
+}
+
+// checkForLargeGoldDonation checks if a message is a gold donation > 1 million.
+// If so, sends an additional celebration message to the #general channel.
+func (b *Bot) checkForLargeGoldDonation(msg model.ClanMessage) {
+	// Pattern: "playername added NNNNNNx Gold."
+	re := regexp.MustCompile(`^(.+?)\s+added\s+(\d+)x\s+Gold\.$`)
+	matches := re.FindStringSubmatch(msg.Message)
+
+	if len(matches) != 3 {
+		return
+	}
+
+	playerName := matches[1]
+	amountStr := matches[2]
+
+	amount, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil {
+		return
+	}
+
+	// Only celebrate donations >= 1 million
+	if amount < 1000000 {
+		return
+	}
+
+	// Find the #general channel
+	generalChannelID := b.findChannelIDByName("general")
+	if generalChannelID == "" {
+		log.Println("[messagesender] general channel not found, cannot send celebration message")
+		return
+	}
+
+	// Convert UTC timestamp to EST/EDT for the embed
+	est, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		log.Printf("[messagesender] failed to load EST timezone: %v", err)
+		est = time.UTC // fallback to UTC
+	}
+	estTime := msg.Timestamp.In(est)
+
+	// Create celebration embed
+	embed := &discordgo.MessageEmbed{
+		Title:       "🔔🎉 Leadership Commendation",
+		Description: "Leadership commends **" + playerName + "** for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done.",
+		Color:       0xFFD700, // Gold color
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: estTime.Format("Jan _2, 2006 at 3:04 PM MST"),
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Amount Donated",
+				Value:  formatAmount(amount) + " Gold",
+				Inline: true,
+			},
+		},
+	}
+
+	if _, err := b.session.ChannelMessageSendEmbed(generalChannelID, embed); err != nil {
+		log.Printf("[messagesender] failed to send celebration message for %s: %v", playerName, err)
+	} else {
+		log.Printf("[messagesender] sent celebration message for %s's %d gold donation", playerName, amount)
 	}
 }
 
@@ -91,6 +160,24 @@ func formatMessage(m model.ClanMessage) string {
 	}
 	estTime := m.Timestamp.In(est)
 	return "`[" + estTime.Format("Jan _2 15:04") + "]` " + m.Message
+}
+
+// formatAmount formats a number with comma separators (e.g., 1000000 -> "1,000,000")
+func formatAmount(n int64) string {
+	s := strconv.FormatInt(n, 10)
+	if len(s) <= 3 {
+		return s
+	}
+
+	// Insert commas from right to left
+	var result []byte
+	for i, digit := range s {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			result = append(result, ',')
+		}
+		result = append(result, byte(digit))
+	}
+	return string(result)
 }
 
 // findChannelIDByName searches the bot's guilds for a text channel with the given name.
