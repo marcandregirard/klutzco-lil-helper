@@ -5,7 +5,6 @@ import (
 	"log"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"klutco-lil-helper/internal/model"
@@ -41,8 +40,8 @@ func (b *Bot) runMessageSender(ctx context.Context, channelName string) {
 	}
 }
 
-// sendPendingMessages fetches messages from DB and sends them to their designated channels.
-func (b *Bot) sendPendingMessages(defaultChannelName string) {
+// sendPendingMessages fetches messages from DB and sends them to the testing-ground channel.
+func (b *Bot) sendPendingMessages(channelName string) {
 	if b.db == nil {
 		log.Println("[messagesender] no db available")
 		return
@@ -57,38 +56,28 @@ func (b *Bot) sendPendingMessages(defaultChannelName string) {
 		return
 	}
 
-	// Group messages by channel based on content
-	messagesByChannel := make(map[string][]model.ClanMessage)
-	for _, m := range msgs {
-		channelName := determineChannel(m, defaultChannelName)
-		messagesByChannel[channelName] = append(messagesByChannel[channelName], m)
+	// find channel ID for name "testing-ground" across guilds the bot is in
+	channelID := b.findChannelIDByName(channelName)
+	if channelID == "" {
+		log.Printf("[messagesender] channel %v not found", channelName)
+		return
 	}
 
-	// Send messages to each channel
 	sentIDs := make([]int64, 0, len(msgs))
-	for channelName, channelMsgs := range messagesByChannel {
-		// find channel ID for this channel name
-		channelID := b.findChannelIDByName(channelName)
-		if channelID == "" {
-			log.Printf("[messagesender] channel %q not found, skipping %d messages", channelName, len(channelMsgs))
+	for _, m := range msgs {
+		text := formatMessage(m)
+		if _, err := b.session.ChannelMessageSend(channelID, text); err != nil {
+			log.Printf("[messagesender] failed to send message id=%d: %v", m.ID, err)
+			// don't mark as sent; continue to next
 			continue
 		}
+		sentIDs = append(sentIDs, m.ID)
 
-		for _, m := range channelMsgs {
-			text := formatMessage(m)
-			if _, err := b.session.ChannelMessageSend(channelID, text); err != nil {
-				log.Printf("[messagesender] failed to send message id=%d to channel %q: %v", m.ID, channelName, err)
-				// don't mark as sent; continue to next
-				continue
-			}
-			sentIDs = append(sentIDs, m.ID)
+		// Check if this was a large gold donation and send celebration message
+		b.checkForLargeGoldDonation(m)
 
-			// Check if this was a large gold donation and send celebration message
-			b.checkForLargeGoldDonation(m)
-
-			// small pause to avoid hitting rate limits
-			time.Sleep(150 * time.Millisecond)
-		}
+		// small pause to avoid hitting rate limits
+		time.Sleep(150 * time.Millisecond)
 	}
 
 	if len(sentIDs) > 0 {
@@ -130,26 +119,13 @@ func (b *Bot) checkForLargeGoldDonation(msg model.ClanMessage) {
 	}
 
 	// Create and send celebration message
-	celebrationText := "Leadership commends " + playerName + " for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done.\n\nhttps://media.giphy.com/media/l0HlLMw4h4VELMXle/giphy.gif"
+	celebrationText := "Leadership commends " + playerName + " for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done."
 
 	if _, err := b.session.ChannelMessageSend(generalChannelID, celebrationText); err != nil {
 		log.Printf("[messagesender] failed to send celebration message for %s: %v", playerName, err)
 	} else {
 		log.Printf("[messagesender] sent celebration message for %s's %d gold donation", playerName, amount)
 	}
-}
-
-// determineChannel determines which Discord channel a message should be sent to
-// based on its content.
-// - Gold donation messages go to "corporate-oversight"
-// - All other messages go to the default channel
-func determineChannel(msg model.ClanMessage, defaultChannel string) string {
-	// Gold donation messages go to corporate-oversight
-	if strings.Contains(msg.Message, "added ") && strings.Contains(msg.Message, "x Gold.") {
-		return "corporate-oversight"
-	}
-	// All other messages go to the default channel
-	return defaultChannel
 }
 
 func formatMessage(m model.ClanMessage) string {
