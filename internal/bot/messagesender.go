@@ -3,6 +3,8 @@ package bot
 import (
 	"context"
 	"log"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -80,6 +82,10 @@ func (b *Bot) sendPendingMessages(defaultChannelName string) {
 				continue
 			}
 			sentIDs = append(sentIDs, m.ID)
+
+			// Check if this was a large gold donation and send celebration message
+			b.checkForLargeGoldDonation(m)
+
 			// small pause to avoid hitting rate limits
 			time.Sleep(150 * time.Millisecond)
 		}
@@ -92,16 +98,52 @@ func (b *Bot) sendPendingMessages(defaultChannelName string) {
 	}
 }
 
+// checkForLargeGoldDonation checks if a message is a gold donation > 1 million.
+// If so, sends an additional celebration message to the #general channel.
+func (b *Bot) checkForLargeGoldDonation(msg model.ClanMessage) {
+	// Pattern: "playername added NNNNNNx Gold."
+	re := regexp.MustCompile(`^(.+?)\s+added\s+(\d+)x\s+Gold\.$`)
+	matches := re.FindStringSubmatch(msg.Message)
+
+	if len(matches) != 3 {
+		return
+	}
+
+	playerName := matches[1]
+	amountStr := matches[2]
+
+	amount, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil {
+		return
+	}
+
+	// Only celebrate donations > 1 million
+	if amount <= 1000000 {
+		return
+	}
+
+	// Find the #general channel
+	generalChannelID := b.findChannelIDByName("general")
+	if generalChannelID == "" {
+		log.Println("[messagesender] general channel not found, cannot send celebration message")
+		return
+	}
+
+	// Create and send celebration message
+	celebrationText := "Leadership commends " + playerName + " for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done.\n\nhttps://media.giphy.com/media/l0HlLMw4h4VELMXle/giphy.gif"
+
+	if _, err := b.session.ChannelMessageSend(generalChannelID, celebrationText); err != nil {
+		log.Printf("[messagesender] failed to send celebration message for %s: %v", playerName, err)
+	} else {
+		log.Printf("[messagesender] sent celebration message for %s's %d gold donation", playerName, amount)
+	}
+}
+
 // determineChannel determines which Discord channel a message should be sent to
 // based on its content.
-// - Celebration messages (gold > 1M) go to "general"
 // - Gold donation messages go to "corporate-oversight"
 // - All other messages go to the default channel
 func determineChannel(msg model.ClanMessage, defaultChannel string) string {
-	// Celebration messages (from gold donations > 1M) go to general
-	if strings.HasPrefix(msg.Message, "Leadership commends ") {
-		return "general"
-	}
 	// Gold donation messages go to corporate-oversight
 	if strings.Contains(msg.Message, "added ") && strings.Contains(msg.Message, "x Gold.") {
 		return "corporate-oversight"

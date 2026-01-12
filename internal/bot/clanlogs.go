@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -114,13 +113,6 @@ func fetchAndStoreClanLogs(ctx context.Context, client *http.Client, url string,
 				continue
 			}
 			inserted++
-
-			// Check for large gold donations (> 1 million)
-			if celebrationMsg := checkGoldDonation(m); celebrationMsg != nil {
-				if err := model.InsertClanMessage(db, *celebrationMsg); err != nil {
-					log.Printf("[clanlogs] failed to insert celebration message: %v", err)
-				}
-			}
 		}
 
 		log.Printf("[clanlogs] fetched %d messages, attempted inserts: %d", len(msgs), inserted)
@@ -131,44 +123,6 @@ func fetchAndStoreClanLogs(ctx context.Context, client *http.Client, url string,
 		return lastErr
 	}
 	return errors.New("fetch failed")
-}
-
-// checkGoldDonation checks if a message is a gold donation > 1 million.
-// If so, returns a celebration message to post in the General channel.
-// Message format: "playername added 1000000x Gold."
-func checkGoldDonation(msg model.ClanMessage) *model.ClanMessage {
-	// Pattern: "playername added NNNNNNx Gold."
-	// We need to extract the player name and amount
-	re := regexp.MustCompile(`^(.+?)\s+added\s+(\d+)x\s+Gold\.$`)
-	matches := re.FindStringSubmatch(msg.Message)
-
-	if len(matches) != 3 {
-		return nil
-	}
-
-	playerName := matches[1]
-	amountStr := matches[2]
-
-	amount, err := strconv.ParseInt(amountStr, 10, 64)
-	if err != nil {
-		return nil
-	}
-
-	// Only celebrate donations > 1 million
-	if amount <= 1000000 {
-		return nil
-	}
-
-	// Create celebration message
-	celebrationText := "Leadership commends " + playerName + " for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done.\n\nhttps://media.giphy.com/media/l0HlLMw4h4VELMXle/giphy.gif"
-
-	return &model.ClanMessage{
-		ClanName:       msg.ClanName,
-		MemberUsername: "KlutzCo Leadership",
-		Message:        celebrationText,
-		Timestamp:      msg.Timestamp,
-		MessageSent:    false,
-	}
 }
 
 // parseRawClanMessages decodes the API JSON into []model.ClanMessage.
