@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"log"
+	"strings"
 	"time"
 
 	"klutco-lil-helper/internal/model"
@@ -63,8 +64,15 @@ func (b *Bot) sendPendingMessages(channelName string) {
 
 	sentIDs := make([]int64, 0, len(msgs))
 	for _, m := range msgs {
-		text := formatMessage(m)
-		if _, err := b.session.ChannelMessageSend(channelID, text); err != nil {
+		var err error
+		if isClanVaultMessage(m) {
+			err = b.sendClanVaultEmbed(channelID, m)
+		} else {
+			text := formatMessage(m)
+			_, err = b.session.ChannelMessageSend(channelID, text)
+		}
+
+		if err != nil {
 			log.Printf("[messagesender] failed to send message id=%d: %v", m.ID, err)
 			// don't mark as sent; continue to next
 			continue
@@ -136,4 +144,46 @@ func CanBotSend(s *discordgo.Session, channelID string) (bool, error) {
 	canSend := perms&discordgo.PermissionSendMessages != 0
 
 	return canView && canSend, nil
+}
+
+// isClanVaultMessage checks if a message is about Clan Vault contributions
+func isClanVaultMessage(m model.ClanMessage) bool {
+	msgLower := strings.ToLower(m.Message)
+	// Check for Clan Vault related keywords
+	return strings.Contains(msgLower, "clan vault") ||
+		   strings.Contains(msgLower, "deposited")
+}
+
+// sendClanVaultEmbed sends a Clan Vault message as a rich Discord embed
+func (b *Bot) sendClanVaultEmbed(channelID string, m model.ClanMessage) error {
+	// Convert UTC timestamp to EST/EDT
+	est, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		log.Printf("[messagesender] failed to load EST timezone: %v", err)
+		est = time.UTC // fallback to UTC
+	}
+	estTime := m.Timestamp.In(est)
+
+	// Create a congratulatory message
+	title := "🔔🎉 Leadership Commendation"
+	description := "Leadership commends " + m.MemberUsername + " for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done."
+
+	embed := &discordgo.MessageEmbed{
+		Title:       title,
+		Description: description,
+		Color:       0xFFD700, // Gold color
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: estTime.Format("Jan _2, 2006 at 3:04 PM MST"),
+		},
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Original Message",
+				Value:  m.Message,
+				Inline: false,
+			},
+		},
+	}
+
+	_, err = b.session.ChannelMessageSendEmbed(channelID, embed)
+	return err
 }
