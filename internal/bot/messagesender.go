@@ -119,7 +119,7 @@ func (b *Bot) checkForLargeGoldDonation(msg model.ClanMessage) {
 	}
 
 	// Create and send celebration message
-	celebrationText := "🔔🎉 Leadership commends " + playerName + " for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done."
+	celebrationText := "🔔🎉 Leadership commends **" + playerName + "** for their exceptional Clan Vault contribution. This selfless act of organizational commitment exemplifies KlutzCo values. Well done."
 
 	if _, err := b.session.ChannelMessageSend(generalChannelID, celebrationText); err != nil {
 		log.Printf("[messagesender] failed to send celebration message for %s: %v", playerName, err)
