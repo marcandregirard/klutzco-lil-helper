@@ -106,8 +106,8 @@ func (b *Bot) checkForLargeGoldDonation(msg model.ClanMessage) {
 		return
 	}
 
-	// Only celebrate donations > 1 million
-	if amount <= 1000000 {
+	// Only celebrate donations >= 1 million
+	if amount < 1000000 {
 		return
 	}
 
