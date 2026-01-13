@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+	_ "time/tzdata" // Embed timezone database for containerized environments
 
 	"klutco-lil-helper/internal/model"
 
