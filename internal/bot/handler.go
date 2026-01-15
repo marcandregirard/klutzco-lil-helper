@@ -63,6 +63,13 @@ func (b *Bot) Start() error {
 	channelName := os.Getenv("CLAN_MESSAGE_CHANNEL")
 	go b.runMessageSender(ctx, channelName)
 
+	// start boss scheduler (posts to channel named by BOSS_CHANNEL, default "boss")
+	bossChannel := os.Getenv("BOSS_CHANNEL")
+	if bossChannel == "" {
+		bossChannel = "boss"
+	}
+	go b.runBossScheduler(ctx, bossChannel)
+
 	// Wait for interrupt signal to gracefully shut down
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
