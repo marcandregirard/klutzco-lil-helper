@@ -119,7 +119,12 @@ func buildBossMessage(weekly bool) (string, []string) {
 	if weekly {
 		word = "weekly"
 	}
-	content := "**Who has " + word + " quests for what bosses today?**  :chicken:  Griffin :imp:  Hades :japanese_ogre:  Devil :zap:  Zeus :lion_face:  Chimera :snake:  Medusa"
+	// For daily use 'today?', for weekly avoid 'today' at the end; use 'this week?'
+	ending := " today?"
+	if weekly {
+		ending = " this week?"
+	}
+	content := "**Who has " + word + " quests for what bosses" + ending + "**  :chicken:  Griffin :imp:  Hades :japanese_ogre:  Devil :zap:  Zeus :lion_face:  Chimera :snake:  Medusa"
 
 	// Unicode emoji to react with (match visual order): chicken, imp, japanese_ogre, zap, lion_face, snake
 	reactions := []string{"🐔", "😈", "👺", "⚡", "🦁", "🐍"}
