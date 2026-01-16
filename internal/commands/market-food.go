@@ -43,10 +43,34 @@ var foodHealingValues = map[string]int{
 	"power_pizza":          22,
 }
 
-// ItemMapping represents an item from the items API
-type ItemMapping struct {
-	NameID     string `json:"name_id"`
-	InternalID int    `json:"internal_id"`
+// Item ID mapping (name_id -> internal_id)
+// This is static data that never changes
+var itemIDMapping = map[string]int{
+	"cooked_mackerel":      100,
+	"cooked_perch":         102,
+	"cooked_trout":         104,
+	"cooked_salmon":        105,
+	"cooked_carp":          106,
+	"cooked_meat":          114,
+	"cooked_giant_meat":    115,
+	"cooked_quality_meat":  116,
+	"cooked_superior_meat": 117,
+	"potato_soup":          140,
+	"meat_burger":          141,
+	"cod_soup":             143,
+	"blueberry_pie":        144,
+	"salmon_salad":         145,
+	"porcini_soup":         146,
+	"power_pizza":          148,
+	"cooked_anglerfish":    156,
+	"cooked_zander":        158,
+	"cooked_piranha":       160,
+	"cooked_pufferfish":    162,
+	"cooked_cod":           164,
+	"stew":                 559,
+	"cooked_tuna":          562,
+	"cooked_bloodmoon_eel": 888,
+	"cooked_apex_meat":     906,
 }
 
 // MarketPriceItem represents market price data
@@ -95,41 +119,10 @@ func marketFoodHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// Fetch data in parallel
-	var itemMapping map[string]int
-	var priceMap map[int]float64
-	var errMapping, errPrice error
-
-	done := make(chan bool)
-
-	go func() {
-		itemMapping, errMapping = fetchItemMapping(ctx)
-		done <- true
-	}()
-
-	go func() {
-		priceMap, errPrice = fetchMarketPrices(ctx)
-		done <- true
-	}()
-
-	// Wait for both goroutines
-	<-done
-	<-done
-
-	if errMapping != nil {
-		log.Printf("[market-food] failed to fetch item mapping: %v", errMapping)
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-			Type: discordgo.InteractionResponseChannelMessageWithSource,
-			Data: &discordgo.InteractionResponseData{
-				Content: "❌ Failed to fetch market data. The API may be temporarily unavailable. Please try again later.",
-				Flags:   discordgo.MessageFlagsEphemeral,
-			},
-		})
-		return
-	}
-
-	if errPrice != nil {
-		log.Printf("[market-food] failed to fetch market prices: %v", errPrice)
+	// Fetch market prices
+	priceMap, err := fetchMarketPrices(ctx)
+	if err != nil {
+		log.Printf("[market-food] failed to fetch market prices: %v", err)
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
@@ -141,7 +134,7 @@ func marketFoodHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	}
 
 	// Calculate food values
-	results := calculateFoodValues(itemMapping, priceMap)
+	results := calculateFoodValues(priceMap)
 
 	if len(results) == 0 {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
@@ -169,65 +162,6 @@ func marketFoodHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			Flags:  ephemeralFlag(justForMe),
 		},
 	})
-}
-
-// fetchItemMapping fetches item name_id to internal_id mapping from the API
-func fetchItemMapping(ctx context.Context) (map[string]int, error) {
-	url := "https://idleclans.uraxys.dev/api/items/all"
-	var items []ItemMapping
-	var lastErr error
-
-	// Retry logic: 3 attempts with exponential backoff
-	for attempt := 0; attempt < 3; attempt++ {
-		if attempt > 0 {
-			backoff := time.Duration(1<<uint(attempt-1)) * time.Second
-			select {
-			case <-time.After(backoff):
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
-		}
-
-		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-
-		client := &http.Client{Timeout: 15 * time.Second}
-		resp, err := client.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			lastErr = err
-			continue
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			lastErr = fmt.Errorf("API returned status %d", resp.StatusCode)
-			continue
-		}
-
-		err = json.Unmarshal(body, &items)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-
-		// Success - build mapping
-		mapping := make(map[string]int)
-		for _, item := range items {
-			mapping[item.NameID] = item.InternalID
-		}
-		return mapping, nil
-	}
-
-	return nil, fmt.Errorf("failed after 3 attempts: %w", lastErr)
 }
 
 // fetchMarketPrices fetches latest market prices from the API
@@ -290,11 +224,11 @@ func fetchMarketPrices(ctx context.Context) (map[int]float64, error) {
 }
 
 // calculateFoodValues combines data and calculates cost per HP
-func calculateFoodValues(itemMapping map[string]int, priceMap map[int]float64) []FoodValueResult {
+func calculateFoodValues(priceMap map[int]float64) []FoodValueResult {
 	var results []FoodValueResult
 
 	for foodName, healing := range foodHealingValues {
-		itemID, ok := itemMapping[foodName]
+		itemID, ok := itemIDMapping[foodName]
 		if !ok {
 			log.Printf("[market-food] no item ID found for: %s", foodName)
 			continue
