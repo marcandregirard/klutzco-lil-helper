@@ -66,7 +66,7 @@ func (b *Bot) Start() error {
 	// start boss scheduler (posts to channel named by BOSS_CHANNEL, default "boss")
 	bossChannel := os.Getenv("BOSS_CHANNEL")
 	if bossChannel == "" {
-		bossChannel = "boss"
+		bossChannel = "tactical-dispatch"
 	}
 	go b.runBossScheduler(ctx, bossChannel)
 
