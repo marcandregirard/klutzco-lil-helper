@@ -311,16 +311,14 @@ func formatFoodEmbed(results []FoodValueResult) *discordgo.MessageEmbed {
 		foodName := strings.ReplaceAll(result.Name, "_", " ")
 		foodName = titleizer.String(foodName)
 
-		// Format the field value with healing, price, and cost per HP
-		fieldValue := fmt.Sprintf(
-			"Healing: **%d HP** | Price: **%.2f gold** | Cost: **%.2f g/HP**",
-			result.Healing,
-			result.Price,
-			result.CostPerHealing,
-		)
+		// Format: "{HP value} - {item name}" for title
+		fieldName := fmt.Sprintf("%d HP - %s", result.Healing, foodName)
+
+		// Format: "{Cost} g, {Cost per HP} g/HP" for value
+		fieldValue := fmt.Sprintf("%.0f g, %.1f g/HP", result.Price, result.CostPerHealing)
 
 		embed.Fields = append(embed.Fields, &discordgo.MessageEmbedField{
-			Name:   foodName,
+			Name:   fieldName,
 			Value:  fieldValue,
 			Inline: true,
 		})
