@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -120,11 +121,34 @@ func buildBossMessage(weekly bool) (string, []string) {
 		word = "weekly"
 	}
 	// For daily use 'today?', for weekly avoid 'today' at the end; use 'this week?'
-	ending := " today?"
-	if weekly {
-		ending = " this week?"
+	dateSuffix := ""
+
+	if !weekly {
+		now := time.Now().UTC()
+		day := now.Day()
+		// determine ordinal suffix
+		suffix := "th"
+		if day%100 < 11 || day%100 > 13 {
+			switch day % 10 {
+			case 1:
+				suffix = "st"
+			case 2:
+				suffix = "nd"
+			case 3:
+				suffix = "rd"
+			}
+		}
+		dateSuffix = " (" + now.Format("Jan ") + strconv.Itoa(day) + suffix + ")"
 	}
-	content := "**Who has " + word + " quests for what bosses " + ending + "**\n\n  :chicken:  Griffin\n :imp:  Hades\n :japanese_ogre:  Devil\n :zap:  Zeus\n :lion_face:  Chimera\n :snake:  Medusa"
+
+	// removed leading spaces from ending strings to avoid double spaces when concatenated
+	ending := "today" + dateSuffix
+	if weekly {
+		ending = "this week"
+	}
+
+	// include date like (Jan 20th) for daily messages
+	content := "What are your **" + word + " boss quests " + ending + "?**\n\n  :chicken:  Griffin\n :imp:  Hades\n :japanese_ogre:  Devil\n :zap:  Zeus\n :lion_face:  Chimera\n :snake:  Medusa"
 
 	// Unicode emoji to react with (match visual order): chicken, imp, japanese_ogre, zap, lion_face, snake
 	reactions := []string{"🐔", "😈", "👺", "⚡", "🦁", "🐍"}
