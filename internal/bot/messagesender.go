@@ -14,17 +14,33 @@ import (
 )
 
 const defaultPendingChannel = "testing-ground"
+const defaultDonationChannel = "general"
+
+var memberToDiscord = map[string]string{
+	"ImaKlutz":  "ImaKlutz",
+	"guildan":   "Guildan",
+	"Charlster": "Gagnon54",
+	"moraxam":   "Morax",
+	"yothos":    "yothos",
+	"Choufleur": "Steoh",
+	"g4m3f4c3":  "g4m3f4c3",
+	"Oliiviier": "K.",
+}
 
 // runMessageSender starts a background routine that, every 30 seconds,
 // fetches up to 10 oldest unsent clan messages and posts them to a channel named "testing-ground".
 // After successful send, the messages are marked as sent in the database.
-func (b *Bot) runMessageSender(ctx context.Context, channelName string) {
+func (b *Bot) runMessageSender(ctx context.Context, channelName string, donationChannel string) {
 	interval := 30 * time.Second
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	if channelName == "" {
 		channelName = defaultPendingChannel
+	}
+
+	if donationChannel == "" {
+		donationChannel = defaultDonationChannel
 	}
 
 	// send immediately once on startup
@@ -126,6 +142,10 @@ func (b *Bot) checkForLargeGoldDonation(msg model.ClanMessage) {
 		est = time.UTC // fallback to UTC
 	}
 	estTime := msg.Timestamp.In(est)
+	discordMention, ok := memberToDiscord[playerName]
+	if ok {
+		playerName = "@" + discordMention
+	}
 
 	// Create celebration embed
 	embed := &discordgo.MessageEmbed{
