@@ -33,8 +33,16 @@ t1:
 		now := time.Now().UTC()
 		isWeekly := now.Weekday() == time.Sunday
 
-		if err := b.postBossMessage(channelName, isWeekly); err != nil {
+		//post the daily message
+		if err := b.postBossMessage(channelName, false); err != nil {
 			log.Printf("[messagescheduler] failed to post boss message: %v", err)
+		}
+
+		//post the weekly message if applicable
+		if isWeekly {
+			if err := b.postBossMessage(channelName, isWeekly); err != nil {
+				log.Printf("[messagescheduler] failed to post boss message: %v", err)
+			}
 		}
 
 		// compute next run: next midnight UTC
