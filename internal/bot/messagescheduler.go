@@ -13,51 +13,44 @@ import (
 // runBossScheduler posts a boss-quest message every day at midnight UTC to the named channel.
 // On Sundays it posts the weekly variant. It respects ctx cancellation.
 func (b *Bot) runBossScheduler(ctx context.Context, channelName string) {
-	// compute initial wait until next UTC midnight
+	// compute initial next UTC midnight
 	next := nextUTCMidnight(time.Now().UTC())
-	wait := time.Until(next)
-	log.Printf("[messagescheduler] boss scheduler will first run at %s (in %s)", next.Format(time.RFC3339), wait)
-
-	// wait until first trigger or ctx cancellation
-t1:
-	select {
-	case <-ctx.Done():
-		log.Println("[messagescheduler] context cancelled before first run")
-		return
-	case <-time.After(wait):
-		// continue to loop
-	}
 
 	for {
+		wait := time.Until(next)
+		log.Printf("[messagescheduler] boss scheduler will first run at %s (in %s)", next.Format(time.RFC3339), wait)
+		// use a timer so we can stop it if context is cancelled
+		timer := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			// stop timer to avoid goroutine leak
+			if !timer.Stop() {
+				// drained or expired; nothing to do
+			}
+			log.Println("[messagescheduler] context cancelled, stopping scheduler")
+			return
+		case <-timer.C:
+			// time to post
+		}
+
 		// decide weekly vs daily based on UTC weekday
 		now := time.Now().UTC()
 		isWeekly := now.Weekday() == time.Sunday
 
-		//post the daily message
+		// post the daily message
 		if err := b.postBossMessage(channelName, false); err != nil {
 			log.Printf("[messagescheduler] failed to post boss message: %v", err)
 		}
 
-		//post the weekly message if applicable
+		// post the weekly message if applicable
 		if isWeekly {
-			if err := b.postBossMessage(channelName, isWeekly); err != nil {
+			if err := b.postBossMessage(channelName, true); err != nil {
 				log.Printf("[messagescheduler] failed to post boss message: %v", err)
 			}
 		}
 
-		// compute next run: next midnight UTC
-		next = nextUTCMidnight(now.Add(1 * time.Minute))
-		// sleep until next, but wake early if ctx cancelled
-		wait = time.Until(next)
-		select {
-		case <-ctx.Done():
-			log.Println("[messagescheduler] context cancelled, stopping scheduler")
-			return
-		case <-time.After(wait):
-			// continue
-		}
-		// safety: loop continues
-		goto t1
+		// schedule next run at the following midnight
+		next = next.Add(24 * time.Hour)
 	}
 }
 
