@@ -61,7 +61,8 @@ func (b *Bot) Start() error {
 
 	// start message sender (every 30s)
 	channelName := os.Getenv("CLAN_MESSAGE_CHANNEL")
-	go b.runMessageSender(ctx, channelName)
+	donationChannel := os.Getenv("CLAN_DONATION_CHANNEL")
+	go b.runMessageSender(ctx, channelName, donationChannel)
 
 	// start boss scheduler (posts to channel named by BOSS_CHANNEL, default "boss")
 	bossChannel := os.Getenv("BOSS_CHANNEL")
