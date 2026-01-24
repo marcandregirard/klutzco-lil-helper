@@ -22,7 +22,7 @@ var memberToDiscord = map[string]string{
 	"Charlster": "Gagnon54",
 	"moraxam":   "Morax",
 	"yothos":    "yothos",
-	"Choufleur": "Steoh",
+	"Choufleur": "Steph",
 	"g4m3f4c3":  "g4m3f4c3",
 	"Oliiviier": "K.",
 }
