@@ -35,18 +35,18 @@ func (b *Bot) runBossScheduler(ctx context.Context, channelName string) {
 
 		// decide weekly vs daily based on UTC weekday
 		now := time.Now().UTC()
-		isWeekly := now.Weekday() == time.Sunday
-
-		// post the daily message
-		if err := b.postBossMessage(channelName, false); err != nil {
-			log.Printf("[messagescheduler] failed to post boss message: %v", err)
-		}
+		isWeekly := now.Weekday() == time.Monday
 
 		// post the weekly message if applicable
 		if isWeekly {
 			if err := b.postBossMessage(channelName, true); err != nil {
 				log.Printf("[messagescheduler] failed to post boss message: %v", err)
 			}
+		}
+
+		// post the daily message
+		if err := b.postBossMessage(channelName, false); err != nil {
+			log.Printf("[messagescheduler] failed to post boss message: %v", err)
 		}
 
 		// schedule next run at the following midnight
