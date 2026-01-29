@@ -153,6 +153,11 @@ func buildBossMessage(weekly bool) (string, []string) {
 
 	// Unicode emoji to react with (match visual order): chicken, imp, japanese_ogre, zap, lion_face, snake
 	reactions := []string{"🐔", "😈", "👹", "⚡", "🦁", "🐍"}
+
+	if weekly {
+		content += "\n :key:  Gem quest"
+		reactions = append(reactions, "🔑")
+	}
 	return content, reactions
 }
 
