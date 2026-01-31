@@ -184,8 +184,8 @@ func buildBossMessage(weekly bool) (string, []string) {
 	reactions := []string{"🐔", "😈", "👹", "⚡", "🦁", "🐍"}
 
 	if weekly {
-		content += "\n :key:  Gem quest"
-		reactions = append(reactions, "🔑")
+		content += "\n :gem:  Gem quest"
+		reactions = append(reactions, "💎")
 	}
 	return content, reactions
 }
