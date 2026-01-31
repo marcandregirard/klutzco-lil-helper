@@ -27,6 +27,17 @@ var memberToDiscord = map[string]string{
 	"Oliiviier": "K.",
 }
 
+var memberToDiscordId = map[string]string{
+	"ImaKlutz":  "270655486318215168",
+	"guildan":   "199632692231274496",
+	"Charlster": "409718701236158465",
+	"moraxam":   "344994648059674624",
+	"yothos":    "448261978469695489",
+	"Choufleur": "229776173146570755",
+	"g4m3f4c3":  "298522549661466625",
+	"Oliiviier": "350298028902711308",
+}
+
 // runMessageSender starts a background routine that, every 30 seconds,
 // fetches up to 10 oldest unsent clan messages and posts them to a channel named "testing-ground".
 // After successful send, the messages are marked as sent in the database.
