@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"klutco-lil-helper/internal/model"
+
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -77,6 +79,26 @@ func (b *Bot) postBossMessage(channelName string, weekly bool) error {
 		return nil
 	}
 
+	// Determine message type for database tracking
+	msgType := model.MessageTypeDaily
+	if weekly {
+		msgType = model.MessageTypeWeekly
+	}
+
+	// Delete previous message if one exists
+	if b.db != nil {
+		if prevMsgID, err := model.GetScheduledMessage(b.db, msgType, channelID); err != nil {
+			log.Printf("[messagescheduler] failed to get previous %s message ID: %v", msgType, err)
+		} else if prevMsgID != "" {
+			if err := b.session.ChannelMessageDelete(channelID, prevMsgID); err != nil {
+				log.Printf("[messagescheduler] failed to delete previous %s message %s: %v", msgType, prevMsgID, err)
+				// Continue anyway; the message may have been deleted manually
+			} else {
+				log.Printf("[messagescheduler] deleted previous %s message %s", msgType, prevMsgID)
+			}
+		}
+	}
+
 	content, reactions := buildBossMessage(weekly)
 
 	// send message with retries
@@ -108,6 +130,13 @@ func (b *Bot) postBossMessage(channelName string, weekly bool) error {
 				continue
 			}
 			break
+		}
+	}
+
+	// Store the new message ID for future deletion
+	if b.db != nil {
+		if err := model.UpsertScheduledMessage(b.db, msgType, channelID, m.ID); err != nil {
+			log.Printf("[messagescheduler] failed to store %s message ID: %v", msgType, err)
 		}
 	}
 
