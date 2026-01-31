@@ -116,7 +116,9 @@ func MarkMessagesSent(db *sql.DB, ids []int64) error {
 	return err
 }
 
-func Migrate(db *sql.DB) error {
+// MigrateClanMessages handles migration for the clan_messages table.
+// It creates the table if it doesn't exist, or upgrades from legacy schema if needed.
+func MigrateClanMessages(db *sql.DB) error {
 	// If table does not exist, create it using the canonical SQL
 	var name string
 	err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='clan_messages'").Scan(&name)
