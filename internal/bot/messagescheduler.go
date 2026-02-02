@@ -178,7 +178,7 @@ func buildBossMessage(weekly bool) (string, []string) {
 	}
 
 	// include date like (Jan 20th) for daily messages
-	content := "What are your **" + word + " boss quests " + ending + "?**\n\n  :chicken:  Griffin\n :imp:  Hades\n :japanese_ogre:  Devil\n :zap:  Zeus\n :lion_face:  Chimera\n :snake:  Medusa"
+	content := "What are your **" + word + " boss quests " + ending + "?**\n\n  :chicken:  Griffin\n :smiling_imp:  Hades\n :japanese_ogre:  Devil\n :zap:  Zeus\n :lion_face:  Chimera\n :snake:  Medusa"
 
 	// Unicode emoji to react with (match visual order): chicken, imp, japanese_ogre, zap, lion_face, snake
 	reactions := []string{"🐔", "😈", "👹", "⚡", "🦁", "🐍"}
