@@ -18,7 +18,7 @@ func TestBuildBossMessage(t *testing.T) {
 			wantContent: []string{
 				"What are your **daily boss quests today",
 				":chicken:  Griffin",
-				":imp:  Hades",
+				":smiling_imp:  Hades",
 				":japanese_ogre:  Devil",
 				":zap:  Zeus",
 				":lion_face:  Chimera",
@@ -32,14 +32,14 @@ func TestBuildBossMessage(t *testing.T) {
 			wantContent: []string{
 				"What are your **weekly boss quests this week",
 				":chicken:  Griffin",
-				":imp:  Hades",
+				":smiling_imp:  Hades",
 				":japanese_ogre:  Devil",
 				":zap:  Zeus",
 				":lion_face:  Chimera",
 				":snake:  Medusa",
-				":key:  Gem quest",
+				":gem:  Gem quest",
 			},
-			wantReactions: []string{"🐔", "😈", "👹", "⚡", "🦁", "🐍", "🔑"},
+			wantReactions: []string{"🐔", "😈", "👹", "⚡", "🦁", "🐍", "💎"},
 		},
 	}
 
