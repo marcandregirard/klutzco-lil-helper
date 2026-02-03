@@ -43,15 +43,15 @@ func buildDiscordIDToDisplayName() map[string]string {
 	return result
 }
 
-// nextEastern10AM returns the next occurrence of 10:00 AM America/New_York.
-func nextEastern10AM(now time.Time) time.Time {
+// nextEastern10AM returns the next occurrence of 11:00 AM America/New_York.
+func nextEastern11AM(now time.Time) time.Time {
 	loc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		loc = time.FixedZone("EST", -5*60*60)
 	}
 
 	eastern := now.In(loc)
-	target := time.Date(eastern.Year(), eastern.Month(), eastern.Day(), 10, 0, 0, 0, loc)
+	target := time.Date(eastern.Year(), eastern.Month(), eastern.Day(), 11, 0, 0, 0, loc)
 
 	if !now.Before(target) {
 		target = target.AddDate(0, 0, 1)
@@ -63,7 +63,7 @@ func nextEastern10AM(now time.Time) time.Time {
 // runBossSummary posts a boss fight summary every day at 10 AM Eastern.
 func (b *Bot) runBossSummary(ctx context.Context, summaryChannel, bossChannel string) {
 	for {
-		next := nextEastern10AM(time.Now())
+		next := nextEastern11AM(time.Now())
 		wait := time.Until(next)
 		log.Printf("[bosssummary] next summary at %s (in %s)", next.Format(time.RFC3339), wait)
 
@@ -169,7 +169,7 @@ func fetchReactedUsers(s *discordgo.Session, channelID, messageID, emoji string)
 }
 
 // mergeReactionsToNames merges daily and weekly reaction sets into display names.
-// Users who only appear in the weekly set get a "(w)" suffix,
+// Users who only appear in the weekly set get a "[W]" suffix,
 // unless the boss is weekly-only (like Gem Quest).
 func mergeReactionsToNames(
 	dailyUsers, weeklyUsers map[string]bool,
@@ -193,7 +193,7 @@ func mergeReactionsToNames(
 
 		inDaily := dailyUsers[userID]
 		if !weeklyOnlyBoss && !inDaily {
-			displayName += " (w)"
+			displayName += " [W]"
 		}
 
 		names = append(names, displayName)

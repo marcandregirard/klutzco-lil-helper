@@ -74,7 +74,7 @@ func (b *Bot) Start() error {
 	// start boss summary (posts to channel named by BOSS_SUMMARY_CHANNEL, default "general")
 	bossSummaryChannel := os.Getenv("BOSS_SUMMARY_CHANNEL")
 	if bossSummaryChannel == "" {
-		bossSummaryChannel = "general"
+		bossSummaryChannel = "tactical-dispatch"
 	}
 	go b.runBossSummary(ctx, bossSummaryChannel, bossChannel)
 

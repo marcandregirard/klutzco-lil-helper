@@ -111,7 +111,7 @@ func TestMergeReactionsToNames(t *testing.T) {
 	}
 }
 
-func TestNextEastern10AM(t *testing.T) {
+func TestNextEastern11AM(t *testing.T) {
 	loc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		t.Fatal(err)
@@ -123,28 +123,28 @@ func TestNextEastern10AM(t *testing.T) {
 		wantDay int
 	}{
 		{
-			name:    "before 10AM Eastern, same day",
-			now:     time.Date(2025, 1, 15, 14, 0, 0, 0, time.UTC), // 9AM EST
+			name:    "before 11AM Eastern, same day",
+			now:     time.Date(2025, 1, 15, 15, 0, 0, 0, time.UTC), // 9AM EST
 			wantDay: 15,
 		},
 		{
-			name:    "after 10AM Eastern, next day",
-			now:     time.Date(2025, 1, 15, 16, 0, 0, 0, time.UTC), // 11AM EST
+			name:    "after 11AM Eastern, next day",
+			now:     time.Date(2025, 1, 15, 17, 0, 0, 0, time.UTC), // 11AM EST
 			wantDay: 16,
 		},
 		{
-			name:    "exactly 10AM Eastern, next day",
-			now:     time.Date(2025, 1, 15, 15, 0, 0, 0, time.UTC), // 10AM EST
+			name:    "exactly 11AM Eastern, next day",
+			now:     time.Date(2025, 1, 15, 16, 0, 0, 0, time.UTC), // 10AM EST
 			wantDay: 16,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := nextEastern10AM(tt.now)
+			got := nextEastern11AM(tt.now)
 			eastern := got.In(loc)
-			if eastern.Hour() != 10 {
-				t.Errorf("hour = %d, want 10", eastern.Hour())
+			if eastern.Hour() != 11 {
+				t.Errorf("hour = %d, want 11", eastern.Hour())
 			}
 			if eastern.Day() != tt.wantDay {
 				t.Errorf("day = %d, want %d", eastern.Day(), tt.wantDay)
