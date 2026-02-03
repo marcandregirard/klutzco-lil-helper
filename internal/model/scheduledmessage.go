@@ -9,8 +9,9 @@ import (
 type MessageType string
 
 const (
-	MessageTypeDaily  MessageType = "daily"
-	MessageTypeWeekly MessageType = "weekly"
+	MessageTypeDaily       MessageType = "daily"
+	MessageTypeWeekly      MessageType = "weekly"
+	MessageTypeBossSummary MessageType = "bosssummary"
 )
 
 // ScheduledMessage represents a scheduled message stored in the database

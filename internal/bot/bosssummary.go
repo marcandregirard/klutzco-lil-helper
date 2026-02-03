@@ -107,12 +107,32 @@ func (b *Bot) postBossSummary(summaryChannelName, bossChannelName string) error 
 		return fmt.Errorf("get weekly message: %w", err)
 	}
 
+	// Delete previous summary message if one exists
+	if prevMsgID, err := model.GetScheduledMessage(b.db, model.MessageTypeBossSummary, summaryChannelID); err != nil {
+		log.Printf("[bosssummary] failed to get previous summary message ID: %v", err)
+	} else if prevMsgID != "" {
+		if err := b.session.ChannelMessageDelete(summaryChannelID, prevMsgID); err != nil {
+			log.Printf("[bosssummary] failed to delete previous summary message %s: %v", prevMsgID, err)
+		} else {
+			log.Printf("[bosssummary] deleted previous summary message %s", prevMsgID)
+		}
+	}
+
 	idToName := buildDiscordIDToDisplayName()
 
 	content := buildSummaryContent(b.session, bossChannelID, dailyMsgID, weeklyMsgID, idToName)
 
-	_, err = b.session.ChannelMessageSend(summaryChannelID, content)
-	return err
+	m, err := b.session.ChannelMessageSend(summaryChannelID, content)
+	if err != nil {
+		return err
+	}
+
+	// Store the new message ID for future deletion
+	if err := model.UpsertScheduledMessage(b.db, model.MessageTypeBossSummary, summaryChannelID, m.ID); err != nil {
+		log.Printf("[bosssummary] failed to store summary message ID: %v", err)
+	}
+
+	return nil
 }
 
 // buildSummaryContent fetches reactions for each boss and builds the formatted message.

@@ -61,7 +61,7 @@ func TestMergeReactionsToNames(t *testing.T) {
 			daily:         nil,
 			weekly:        map[string]bool{"BBB": true},
 			weeklyOnly:    false,
-			expectedNames: []string{"Bob (w)"},
+			expectedNames: []string{"Bob [W]"},
 		},
 		{
 			name:          "user in both, no (w)",
@@ -82,7 +82,7 @@ func TestMergeReactionsToNames(t *testing.T) {
 			daily:         map[string]bool{"AAA": true},
 			weekly:        map[string]bool{"AAA": true, "BBB": true},
 			weeklyOnly:    false,
-			expectedNames: []string{"Alice", "Bob (w)"},
+			expectedNames: []string{"Alice", "Bob [W]"},
 		},
 		{
 			name:          "unknown user ID skipped",
