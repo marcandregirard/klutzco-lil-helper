@@ -71,6 +71,13 @@ func (b *Bot) Start() error {
 	}
 	go b.runBossScheduler(ctx, bossChannel)
 
+	// start boss summary (posts to channel named by BOSS_SUMMARY_CHANNEL, default "general")
+	bossSummaryChannel := os.Getenv("BOSS_SUMMARY_CHANNEL")
+	if bossSummaryChannel == "" {
+		bossSummaryChannel = "tactical-dispatch"
+	}
+	go b.runBossSummary(ctx, bossSummaryChannel, bossChannel)
+
 	// Wait for interrupt signal to gracefully shut down
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
