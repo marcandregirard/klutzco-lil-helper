@@ -107,17 +107,6 @@ func (b *Bot) postBossSummary(summaryChannelName, bossChannelName string) error 
 		return fmt.Errorf("get weekly message: %w", err)
 	}
 
-	// Delete previous summary message if one exists
-	if prevMsgID, err := model.GetScheduledMessage(b.db, model.MessageTypeBossSummary, summaryChannelID); err != nil {
-		log.Printf("[bosssummary] failed to get previous summary message ID: %v", err)
-	} else if prevMsgID != "" {
-		if err := b.session.ChannelMessageDelete(summaryChannelID, prevMsgID); err != nil {
-			log.Printf("[bosssummary] failed to delete previous summary message %s: %v", prevMsgID, err)
-		} else {
-			log.Printf("[bosssummary] deleted previous summary message %s", prevMsgID)
-		}
-	}
-
 	idToName := buildDiscordIDToDisplayName()
 
 	content := buildSummaryContent(b.session, bossChannelID, dailyMsgID, weeklyMsgID, idToName)

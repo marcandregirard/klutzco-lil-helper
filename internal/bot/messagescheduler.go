@@ -99,6 +99,20 @@ func (b *Bot) postBossMessage(channelName string, weekly bool) error {
 		}
 	}
 
+	if !weekly {
+		summaryChannelID := b.findChannelIDByName("tactical-dispatch")
+		// Delete previous summary message if one exists
+		if prevMsgID, err := model.GetScheduledMessage(b.db, model.MessageTypeBossSummary, summaryChannelID); err != nil {
+			log.Printf("[bosssummary] failed to get previous summary message ID: %v", err)
+		} else if prevMsgID != "" {
+			if err := b.session.ChannelMessageDelete(summaryChannelID, prevMsgID); err != nil {
+				log.Printf("[bosssummary] failed to delete previous summary message %s: %v", prevMsgID, err)
+			} else {
+				log.Printf("[bosssummary] deleted previous summary message %s", prevMsgID)
+			}
+		}
+	}
+
 	content, reactions := buildBossMessage(weekly)
 
 	// send message with retries

@@ -24,7 +24,7 @@ var memberToDiscord = map[string]string{
 	"yothos":    "yothos",
 	"Choufleur": "Steph",
 	"g4m3f4c3":  "g4m3f4c3",
-	"Oliiviier": "K.",
+	"Oliiviier": "oli",
 }
 
 var memberToDiscordId = map[string]string{
