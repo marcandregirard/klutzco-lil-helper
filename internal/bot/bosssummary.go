@@ -231,6 +231,13 @@ func mergeReactionsToNames(
 		names = append(names, displayName)
 	}
 
-	sort.Strings(names)
+	sort.Slice(names, func(i, j int) bool {
+		iw := strings.HasSuffix(names[i], "[W]")
+		jw := strings.HasSuffix(names[j], "[W]")
+		if iw != jw {
+			return !iw // non-weekly first
+		}
+		return names[i] < names[j]
+	})
 	return names
 }

@@ -2,7 +2,6 @@ package bot
 
 import (
 	"reflect"
-	"sort"
 	"testing"
 	"time"
 )
@@ -85,6 +84,13 @@ func TestMergeReactionsToNames(t *testing.T) {
 			expectedNames: []string{"Alice", "Bob [W]"},
 		},
 		{
+			name:          "weekly-only users sorted after daily users",
+			daily:         map[string]bool{"CCC": true, "BBB": true},
+			weekly:        map[string]bool{"AAA": true},
+			weeklyOnly:    false,
+			expectedNames: []string{"Bob", "Charlie", "Alice [W]"},
+		},
+		{
 			name:          "unknown user ID skipped",
 			daily:         map[string]bool{"ZZZ": true},
 			weekly:        nil,
@@ -103,7 +109,6 @@ func TestMergeReactionsToNames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := mergeReactionsToNames(tt.daily, tt.weekly, idToName, tt.weeklyOnly)
-			sort.Strings(tt.expectedNames)
 			if !reflect.DeepEqual(got, tt.expectedNames) {
 				t.Errorf("got %v, want %v", got, tt.expectedNames)
 			}
