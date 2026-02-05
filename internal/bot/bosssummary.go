@@ -109,7 +109,13 @@ func (b *Bot) postBossSummary(summaryChannelName, bossChannelName string) error 
 
 	idToName := buildDiscordIDToDisplayName()
 
-	content := buildSummaryContent(b.session, bossChannelID, dailyMsgID, weeklyMsgID, idToName)
+	loc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		loc = time.FixedZone("EST", -5*60*60)
+	}
+	isFriday := time.Now().In(loc).Weekday() == time.Friday
+
+	content := buildSummaryContent(b.session, bossChannelID, dailyMsgID, weeklyMsgID, idToName, isFriday)
 
 	m, err := b.session.ChannelMessageSend(summaryChannelID, content)
 	if err != nil {
@@ -125,10 +131,12 @@ func (b *Bot) postBossSummary(summaryChannelName, bossChannelName string) error 
 }
 
 // buildSummaryContent fetches reactions for each boss and builds the formatted message.
+// When isFriday is false, bosses where every participant is weekly-only ([W]) are hidden.
 func buildSummaryContent(
 	s *discordgo.Session,
 	bossChannelID, dailyMsgID, weeklyMsgID string,
 	idToName map[string]string,
+	isFriday bool,
 ) string {
 	var lines []string
 	lines = append(lines, "Today's boss fight summaries\n")
@@ -148,11 +156,26 @@ func buildSummaryContent(
 			continue
 		}
 
+		// Hide bosses where every participant is weekly-only, unless it's Friday.
+		if !boss.WeeklyOnly && !isFriday && allWeeklyOnly(names) {
+			continue
+		}
+
 		line := " " + boss.Emoji + "  " + boss.Name + ": " + strings.Join(names, ", ")
 		lines = append(lines, line)
 	}
 
 	return strings.Join(lines, "\n")
+}
+
+// allWeeklyOnly reports whether every name in the slice carries the "[W]" suffix.
+func allWeeklyOnly(names []string) bool {
+	for _, n := range names {
+		if !strings.HasSuffix(n, "[W]") {
+			return false
+		}
+	}
+	return true
 }
 
 // fetchReactedUsers returns a set of non-bot user IDs that reacted with the given emoji.

@@ -15,7 +15,7 @@ func TestBuildDiscordIDToDisplayName(t *testing.T) {
 		displayName string
 	}{
 		{"199632692231274496", "Guildan"},
-		{"350298028902711308", "K."},
+		{"350298028902711308", "oli"},
 		{"270655486318215168", "ImaKlutz"},
 		{"448261978469695489", "yothos"},
 	}
@@ -106,6 +106,28 @@ func TestMergeReactionsToNames(t *testing.T) {
 			sort.Strings(tt.expectedNames)
 			if !reflect.DeepEqual(got, tt.expectedNames) {
 				t.Errorf("got %v, want %v", got, tt.expectedNames)
+			}
+		})
+	}
+}
+
+func TestAllWeeklyOnly(t *testing.T) {
+	tests := []struct {
+		name  string
+		names []string
+		want  bool
+	}{
+		{"all weekly", []string{"Alice [W]", "Bob [W]"}, true},
+		{"mixed", []string{"Alice", "Bob [W]"}, false},
+		{"all daily", []string{"Alice", "Bob"}, false},
+		{"single weekly", []string{"Charlie [W]"}, true},
+		{"single daily", []string{"Charlie"}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := allWeeklyOnly(tt.names); got != tt.want {
+				t.Errorf("allWeeklyOnly(%v) = %v, want %v", tt.names, got, tt.want)
 			}
 		})
 	}
