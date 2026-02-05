@@ -138,8 +138,16 @@ func buildSummaryContent(
 	idToName map[string]string,
 	isFriday bool,
 ) string {
+	// Calculate max boss name length for alignment
+	maxNameLen := 0
+	for _, boss := range summaryBosses {
+		if len(boss.Name) > maxNameLen {
+			maxNameLen = len(boss.Name)
+		}
+	}
+
 	var lines []string
-	lines = append(lines, "Today's boss fight summaries\n")
+	lines = append(lines, "Today's boss fight summaries:\n")
 
 	for _, boss := range summaryBosses {
 		var dailyUsers, weeklyUsers map[string]bool
@@ -161,7 +169,9 @@ func buildSummaryContent(
 			continue
 		}
 
-		line := " " + boss.Emoji + "  " + boss.Name + ": " + strings.Join(names, ", ")
+		// Pad boss name to align colons
+		padding := strings.Repeat(" ", maxNameLen-len(boss.Name))
+		line := " " + boss.Emoji + "  " + boss.Name + padding + ": " + strings.Join(names, " · ")
 		if boss.WeeklyOnly {
 			line = "\n" + line
 		}
