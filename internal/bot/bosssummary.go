@@ -162,6 +162,9 @@ func buildSummaryContent(
 		}
 
 		line := " " + boss.Emoji + "  " + boss.Name + ": " + strings.Join(names, ", ")
+		if boss.WeeklyOnly {
+			line = "\n" + line
+		}
 		lines = append(lines, line)
 	}
 
