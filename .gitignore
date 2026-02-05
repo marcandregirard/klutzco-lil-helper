@@ -61,3 +61,4 @@ docker-compose.override.yml
 /database.db
 /database.db-wal
 /database.db-shm
+/.claude
