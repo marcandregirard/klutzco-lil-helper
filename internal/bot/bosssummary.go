@@ -43,15 +43,15 @@ func buildDiscordIDToDisplayName() map[string]string {
 	return result
 }
 
-// nextEastern10AM returns the next occurrence of 11:00 AM America/New_York.
-func nextEastern11AM(now time.Time) time.Time {
+// nextEasternTime returns the next occurrence of the specified time in America/New_York timezone.
+func nextEasternTime(now time.Time, hour, minute int) time.Time {
 	loc, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		loc = time.FixedZone("EST", -5*60*60)
 	}
 
 	eastern := now.In(loc)
-	target := time.Date(eastern.Year(), eastern.Month(), eastern.Day(), 11, 0, 0, 0, loc)
+	target := time.Date(eastern.Year(), eastern.Month(), eastern.Day(), hour, minute, 0, 0, loc)
 
 	if !now.Before(target) {
 		target = target.AddDate(0, 0, 1)
@@ -60,10 +60,10 @@ func nextEastern11AM(now time.Time) time.Time {
 	return target
 }
 
-// runBossSummary posts a boss fight summary every day at 10 AM Eastern.
-func (b *Bot) runBossSummary(ctx context.Context, summaryChannel, bossChannel string) {
+// runBossSummary posts a boss fight summary every day at the specified time (Eastern).
+func (b *Bot) runBossSummary(ctx context.Context, summaryChannel, bossChannel string, hour, minute int) {
 	for {
-		next := nextEastern11AM(time.Now())
+		next := nextEasternTime(time.Now(), hour, minute)
 		wait := time.Until(next)
 		log.Printf("[bosssummary] next summary at %s (in %s)", next.Format(time.RFC3339), wait)
 

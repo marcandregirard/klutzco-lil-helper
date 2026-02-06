@@ -30,7 +30,7 @@ docker compose up
 
 Required: `DISCORD_BOT_TOKEN`, `DISCORD_APP_ID`
 
-Optional: `DB_PATH` (default: `/app/data/lilhelper.db`), `CLAN_LOG_URL`, `CLAN_LOG_INTERVAL`, `CLAN_MESSAGE_CHANNEL`, `CLAN_DONATION_CHANNEL`, `BOSS_CHANNEL`
+Optional: `DB_PATH` (default: `/app/data/lilhelper.db`), `CLAN_LOG_URL`, `CLAN_LOG_INTERVAL`, `CLAN_MESSAGE_CHANNEL`, `CLAN_DONATION_CHANNEL`, `BOSS_CHANNEL`, `BOSS_SUMMARY_CHANNEL`, `BOSS_SUMMARY_TIME` (default: `9:30`, format: `HH:MM` in Eastern time)
 
 Local dev uses `.env` (auto-loaded by godotenv). Docker uses `.klutz.env`.
 

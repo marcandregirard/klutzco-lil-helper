@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"klutco-lil-helper/internal/commands"
 	"log"
 	"os"
@@ -76,7 +77,20 @@ func (b *Bot) Start() error {
 	if bossSummaryChannel == "" {
 		bossSummaryChannel = "tactical-dispatch"
 	}
-	go b.runBossSummary(ctx, bossSummaryChannel, bossChannel)
+
+	// Parse boss summary time (default 9:30 AM Eastern)
+	bossSummaryTime := os.Getenv("BOSS_SUMMARY_TIME")
+	if bossSummaryTime == "" {
+		bossSummaryTime = "9:30"
+	}
+	var summaryHour, summaryMinute int
+	if _, err := time.Parse("15:04", bossSummaryTime); err == nil {
+		_, _ = fmt.Sscanf(bossSummaryTime, "%d:%d", &summaryHour, &summaryMinute)
+	} else {
+		log.Printf("[bosssummary] invalid BOSS_SUMMARY_TIME format %q, using default 9:30", bossSummaryTime)
+		summaryHour, summaryMinute = 9, 30
+	}
+	go b.runBossSummary(ctx, bossSummaryChannel, bossChannel, summaryHour, summaryMinute)
 
 	// Wait for interrupt signal to gracefully shut down
 	stop := make(chan os.Signal, 1)
