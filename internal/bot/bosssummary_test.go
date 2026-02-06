@@ -290,7 +290,7 @@ func TestBossEntryFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Simulate the line building logic from buildSummaryContent
 			padding := strings.Repeat(" ", maxNameLen-len(tt.boss.Name))
-			line := " " + tt.boss.Emoji + "  " + tt.boss.Name + padding + ": " + strings.Join(tt.names, " · ")
+			line := " `" + tt.boss.Emoji + "  " + tt.boss.Name + padding + ":` " + strings.Join(tt.names, " · ")
 			if tt.boss.WeeklyOnly {
 				line = "\n" + line
 			}
@@ -308,7 +308,7 @@ func TestBossEntryFormat(t *testing.T) {
 
 			// Verify padding is correct
 			expectedPadding := maxNameLen - len(tt.boss.Name)
-			if !strings.Contains(line, tt.boss.Name+strings.Repeat(" ", expectedPadding)+":") {
+			if !strings.Contains(line, tt.boss.Name+strings.Repeat(" ", expectedPadding)+":`") {
 				t.Errorf("Line should have %d spaces of padding after %s", expectedPadding, tt.boss.Name)
 			}
 
@@ -341,12 +341,12 @@ func TestBossNameAlignment(t *testing.T) {
 
 		// Build the line as in buildSummaryContent
 		names := []string{"TestUser"}
-		line := " " + boss.Emoji + "  " + boss.Name + padding + ": " + strings.Join(names, " · ")
+		line := " `" + boss.Emoji + "  " + boss.Name + padding + ":` " + strings.Join(names, " · ")
 
 		t.Logf("Boss %q (len=%d, padding=%d): %q", boss.Name, len(boss.Name), expectedPadding, line)
 
 		// Verify the padding appears in the line
-		expectedSegment := boss.Name + padding + ":"
+		expectedSegment := boss.Name + padding + ":`"
 		if !strings.Contains(line, expectedSegment) {
 			t.Errorf("Boss %q: expected segment %q not found in line", boss.Name, expectedSegment)
 		}

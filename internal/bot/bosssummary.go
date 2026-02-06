@@ -171,7 +171,7 @@ func buildSummaryContent(
 
 		// Pad boss name to align colons
 		padding := strings.Repeat(" ", maxNameLen-len(boss.Name))
-		line := " " + boss.Emoji + "  " + boss.Name + padding + ": " + strings.Join(names, " · ")
+		line := " `" + boss.Emoji + "  " + boss.Name + padding + ":` " + strings.Join(names, " · ")
 		if boss.WeeklyOnly {
 			line = "\n" + line
 		}
