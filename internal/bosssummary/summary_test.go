@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"klutco-lil-helper/internal/model"
 )
 
 func TestBuildDiscordIDToDisplayName(t *testing.T) {
@@ -29,8 +31,8 @@ func TestBuildDiscordIDToDisplayName(t *testing.T) {
 		}
 	}
 
-	if len(m) != len(memberToDiscordId) {
-		t.Errorf("len = %d, want %d", len(m), len(memberToDiscordId))
+	if len(m) != len(model.MemberToDiscordID) {
+		t.Errorf("len = %d, want %d", len(m), len(model.MemberToDiscordID))
 	}
 }
 
@@ -247,7 +249,7 @@ func TestBossEntryFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Simulate the line building logic from buildSummaryContent
 			padding := strings.Repeat(" ", maxNameLen-len(tt.boss.Name))
-			line := " `" + tt.boss.Emoji + "  " + tt.boss.Name + padding + ":` " + strings.Join(tt.names, " · ")
+			line := tt.boss.Emoji + "`  " + tt.boss.Name + padding + ":` " + strings.Join(tt.names, " · ")
 			if tt.boss.WeeklyOnly {
 				line = "\n" + line
 			}
@@ -298,7 +300,7 @@ func TestBossNameAlignment(t *testing.T) {
 
 		// Build the line as in buildSummaryContent
 		names := []string{"TestUser"}
-		line := " `" + boss.Emoji + "  " + boss.Name + padding + ":` " + strings.Join(names, " · ")
+		line := boss.Emoji + "`  " + boss.Name + padding + ":` " + strings.Join(names, " · ")
 
 		t.Logf("Boss %q (len=%d, padding=%d): %q", boss.Name, len(boss.Name), expectedPadding, line)
 

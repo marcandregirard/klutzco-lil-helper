@@ -81,9 +81,9 @@ func RegenerateSummary(s *discordgo.Session, db *sql.DB, summaryChannelID string
 
 // buildDiscordIDToDisplayName creates a reverse map from Discord user ID to display name.
 func buildDiscordIDToDisplayName() map[string]string {
-	result := make(map[string]string, len(memberToDiscordId))
-	for gameName, discordID := range memberToDiscordId {
-		if displayName, ok := memberToDiscord[gameName]; ok {
+	result := make(map[string]string, len(model.MemberToDiscordID))
+	for gameName, discordID := range model.MemberToDiscordID {
+		if displayName, ok := model.MemberToDiscord[gameName]; ok {
 			result[discordID] = displayName
 		}
 	}
@@ -130,7 +130,7 @@ func buildSummaryContent(
 
 		// Pad boss name to align colons
 		padding := strings.Repeat(" ", maxNameLen-len(boss.Name))
-		line := " `" + boss.Emoji + "  " + boss.Name + padding + ":` " + strings.Join(names, " · ")
+		line := boss.Emoji + "`  " + boss.Name + padding + ":` " + strings.Join(names, " · ")
 		if boss.WeeklyOnly {
 			line = "\n" + line
 		}
@@ -228,47 +228,4 @@ var summaryBosses = []bossEntry{
 	{"🦁", "Chimera", false},
 	{"🐍", "Medusa", false},
 	{"💎", "Gem Quest", true},
-}
-
-// Member name mappings (copied from bot package)
-var memberToDiscordId = map[string]string{
-	"ImaKlutz":     "270655486318215168",
-	"Guildan":      "199632692231274496",
-	"Olisamodra":   "350298028902711308",
-	"Mast3r":       "312372395391549441",
-	"yothos":       "448261978469695489",
-	"Fluff":        "308324362406035459",
-	"FuzzDaddy":    "279044321715273728",
-	"JL94x":        "363768289350909953",
-	"Drizzy6oh":    "689973881056034848",
-	"Jcboi":        "407662894774632449",
-	"Edd":          "200433681803468800",
-	"Bobert":       "262024495276523520",
-	"Carinail":     "287686841818275850",
-	"Antelias":     "159007117878099968",
-	"McFluffinTop": "351442618706829312",
-	"VURSE":        "214136953692364800",
-	"Ronoc":        "287646558877925376",
-	"Jujux9":       "422088516087816192",
-}
-
-var memberToDiscord = map[string]string{
-	"ImaKlutz":     "ImaKlutz",
-	"Guildan":      "Guildan",
-	"Olisamodra":   "oli",
-	"Mast3r":       "Mast3r",
-	"yothos":       "yothos",
-	"Fluff":        "Fluff",
-	"FuzzDaddy":    "FuzzDaddy",
-	"JL94x":        "JL94x",
-	"Drizzy6oh":    "Drizzy",
-	"Jcboi":        "Jcboi",
-	"Edd":          "Edd",
-	"Bobert":       "Bobert",
-	"Carinail":     "Carinail",
-	"Antelias":     "Antelias",
-	"McFluffinTop": "McFluffinTop",
-	"VURSE":        "VURSE",
-	"Ronoc":        "Ronoc",
-	"Jujux9":       "Jujux9",
 }
