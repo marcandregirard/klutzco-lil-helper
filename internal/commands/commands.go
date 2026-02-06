@@ -11,6 +11,7 @@ func RegisterCommands(s *discordgo.Session, appId string) {
 	registerCommand(s, bossCommand, appId)
 	registerCommand(s, keysCommand, appId)
 	registerCommand(s, marketFoodCommand, appId)
+	registerCommand(s, bossSummaryCommand, appId)
 
 	// Register handlers
 	s.AddHandler(bossHandler)
@@ -20,6 +21,8 @@ func RegisterCommands(s *discordgo.Session, appId string) {
 	s.AddHandler(keysAutocompleteHandler)
 
 	s.AddHandler(marketFoodHandler)
+
+	s.AddHandler(bossSummaryHandler)
 }
 
 func registerCommand(s *discordgo.Session, cmd *discordgo.ApplicationCommand, appId string) {
