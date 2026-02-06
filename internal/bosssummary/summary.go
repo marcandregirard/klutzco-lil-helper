@@ -59,13 +59,30 @@ func RegenerateSummary(s *discordgo.Session, db *sql.DB, summaryChannelID string
 
 	content := buildSummaryContent(s, bossChannelID, dailyMsgID, weeklyMsgID, idToName, isFriday)
 
-	// Delete old summary message if it exists
+	// Try to edit existing summary message if it exists
 	oldMsgID, _ := model.GetScheduledMessage(db, model.MessageTypeBossSummary, summaryChannelID)
 	if oldMsgID != "" {
-		_ = s.ChannelMessageDelete(summaryChannelID, oldMsgID)
+		_, err := s.ChannelMessageEdit(summaryChannelID, oldMsgID, content)
+		if err != nil {
+			// Edit failed (message may have been deleted), fall back to delete+send
+			log.Printf("[bosssummary] failed to edit message, falling back to new send: %v", err)
+			_ = s.ChannelMessageDelete(summaryChannelID, oldMsgID)
+
+			m, err := s.ChannelMessageSend(summaryChannelID, content)
+			if err != nil {
+				return fmt.Errorf("send message: %w", err)
+			}
+
+			// Store the new message ID
+			if err := model.UpsertScheduledMessage(db, model.MessageTypeBossSummary, summaryChannelID, m.ID); err != nil {
+				log.Printf("[bosssummary] failed to store summary message ID: %v", err)
+			}
+		}
+		// Edit succeeded, message ID remains the same
+		return nil
 	}
 
-	// Post new summary
+	// No existing message, send new one
 	m, err := s.ChannelMessageSend(summaryChannelID, content)
 	if err != nil {
 		return fmt.Errorf("send message: %w", err)
