@@ -96,6 +96,10 @@ func (b *Bot) postBossMessage(channelName string, weekly bool) error {
 			} else {
 				log.Printf("[messagescheduler] deleted previous %s message %s", msgType, prevMsgID)
 			}
+			// Clean up database record whether delete succeeded or failed
+			if err := model.DeleteScheduledMessage(b.db, msgType, channelID); err != nil {
+				log.Printf("[messagescheduler] failed to delete %s message record from DB: %v", msgType, err)
+			}
 		}
 	}
 
@@ -108,6 +112,10 @@ func (b *Bot) postBossMessage(channelName string, weekly bool) error {
 				log.Printf("[bosssummary] failed to delete previous summary message %s: %v", prevMsgID, err)
 			} else {
 				log.Printf("[bosssummary] deleted previous summary message %s", prevMsgID)
+			}
+			// Clean up database record whether delete succeeded or failed
+			if err := model.DeleteScheduledMessage(b.db, model.MessageTypeBossSummary, channelID); err != nil {
+				log.Printf("[bosssummary] failed to delete summary message record from DB: %v", err)
 			}
 		}
 	}
