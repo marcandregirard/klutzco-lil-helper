@@ -3,6 +3,7 @@ package commands
 import (
 	"log"
 	"os"
+	"time"
 
 	"klutco-lil-helper/internal/bosssummary"
 	"klutco-lil-helper/internal/model"
@@ -63,6 +64,26 @@ func bossSummaryHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 			Content: strPtr("Failed to find summary channel."),
 		})
 		return
+	}
+
+	// ONE-OFF: Re-add missing reactions to daily and weekly polls
+	dailyMsgID, _ := model.GetScheduledMessage(DB, model.MessageTypeDaily, summaryChannelID)
+
+	reactions := []string{"🐔", "🐍"}
+
+	// Add reactions to daily poll
+	if dailyMsgID != "" {
+		for _, r := range reactions {
+			for attempt := 1; attempt <= 3; attempt++ {
+				if err := s.MessageReactionAdd(summaryChannelID, dailyMsgID, r); err != nil {
+					log.Printf("[boss_summary] attempt %d: failed to add reaction %s to daily: %v", attempt, r, err)
+					time.Sleep(time.Duration(attempt) * 300 * time.Millisecond)
+					continue
+				}
+				break
+			}
+		}
+		log.Printf("[boss_summary] re-added reactions to daily poll %s", dailyMsgID)
 	}
 
 	// Check if there's an existing boss summary message in the summary channel
